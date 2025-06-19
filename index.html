@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nutrition Recommendation System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      background: linear-gradient(to right, #f8f9fa, #e3f2fd);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 10px;
+    }
+    .card {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      border-radius: 15px;
+    }
+    .form-title {
+      font-weight: 600;
+      color: #0d6efd;
+    }
+    #loading {
+      font-style: italic;
+      color: #6c757d;
+    }
+    #results {
+      animation: fadeIn 0.8s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    a {
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card p-4">
+      <h2 class="form-title text-center mb-4">Nutrition Recommendation System</h2>
+      <form id="nutritionForm">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="age" class="form-label">Age (years)</label>
+            <input type="number" class="form-control" id="age" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="weight" class="form-label">Weight (kg)</label>
+            <input type="number" class="form-control" id="weight" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="height" class="form-label">Height (cm)</label>
+            <input type="number" class="form-control" id="height" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="gender" class="form-label">Gender</label>
+            <select class="form-select" id="gender" required>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="activity_level" class="form-label">Activity Level</label>
+            <select class="form-select" id="activity_level" required>
+              <option value="sedentary">Sedentary</option>
+              <option value="light">Light</option>
+              <option value="moderate">Moderate</option>
+              <option value="active">Active</option>
+              <option value="very_active">Very Active</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="goal" class="form-label">Goal</label>
+            <select class="form-select" id="goal" required>
+              <option value="weight_loss">Weight Loss</option>
+              <option value="muscle_gain">Muscle Gain</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+          </div>
+          <div class="col-md-12 mb-3">
+            <label for="diet_type" class="form-label">Diet Type</label>
+            <select class="form-select" id="diet_type" required>
+              <option value="vegetarian">Vegetarian</option>
+              <option value="non_vegetarian">Non-Vegetarian</option>
+            </select>
+          </div>
+        </div>
+        <div class="text-center">
+          <button type="submit" class="btn btn-primary px-5">Get Recommendations</button>
+        </div>
+      </form>
+
+      <div id="loading" class="text-center mt-4">Loading recommendations...</div>
+
+      <div id="results" class="mt-5">
+        <h4 class="text-primary">Daily Nutrition Recommendations:</h4>
+        <p><strong>Calories:</strong> <span id="calories"></span></p>
+        <p><strong>Protein:</strong> <span id="protein"></span> g</p>
+        <p><strong>Fat:</strong> <span id="fat"></span> g</p>
+        <p><strong>Carbs:</strong> <span id="carbs"></span> g</p>
+
+        <h4 class="text-primary mt-4">Sample Meal Plan:</h4>
+        <ul class="list-group mb-3">
+          <li class="list-group-item"><strong>Breakfast:</strong> <span id="breakfast"></span></li>
+          <li class="list-group-item"><strong>Lunch:</strong> <span id="lunch"></span></li>
+          <li class="list-group-item"><strong>Dinner:</strong> <span id="dinner"></span></li>
+        </ul>
+
+        <h4 class="text-primary mt-4">Recommended Exercises:</h4>
+        <ul id="exerciseList" class="list-group"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('nutritionForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+
+      const data = {
+        age: document.getElementById('age').value,
+        weight: document.getElementById('weight').value,
+        height: document.getElementById('height').value,
+        gender: document.getElementById('gender').value,
+        activity_level: document.getElementById('activity_level').value,
+        goal: document.getElementById('goal').value,
+        diet_type: document.getElementById('diet_type').value
+      };
+
+      try {
+        const response = await fetch('/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        document.getElementById('calories').innerText = result.calories;
+        document.getElementById('protein').innerText = result.protein;
+        document.getElementById('fat').innerText = result.fat;
+        document.getElementById('carbs').innerText = result.carbs;
+        document.getElementById('breakfast').innerText = result.meal_plan.breakfast;
+        document.getElementById('lunch').innerText = result.meal_plan.lunch;
+        document.getElementById('dinner').innerText = result.meal_plan.dinner;
+
+        const exerciseList = document.getElementById('exerciseList');
+        exerciseList.innerHTML = result.exercises
+          .map(ex => `<li class="list-group-item"><a href="${ex[1]}" target="_blank">${ex[0]}</a></li>`)
+          .join('');
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+      } catch (error) {
+        alert('An error occurred while fetching recommendations.');
+        document.getElementById('loading').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
